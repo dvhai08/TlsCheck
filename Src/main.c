@@ -24,7 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "mqtt.h"
+#include "lwip/dns.h"
+#include "lwip/altcp_tls.h"
+#include "lwip.h"
+#include "stm32f7xx_ll_usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +64,33 @@ const osThreadAttr_t myMsgTask_attributes = {
   .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE BEGIN PV */
+
+int fputc(int ch,FILE *stream)
+{
+		if(ch == 10){
+			fputc(13, stream);
+		}
+		
+		LL_USART_TransmitData8(USART2, ch);
+	
+		while ( !LL_USART_IsActiveFlag_TXE(USART2) ) {
+		}
+    return (ch);
+}
+ 
+int fgetc(FILE *stream)
+{//
+ //return Usart1_Get_symbol ();
+	return(0);
+}
+
+void exit(int Code){
+	while(1){
+		LL_USART_TransmitData8(USART2, 'A');
+		volatile int i = 100000;
+		while(--i>0){};
+	}
+};
 
 /* USER CODE END PV */
 
@@ -466,11 +497,34 @@ void StartDefaultTask(void *argument)
 * @param argument: Not used
 * @retval None
 */
+
+ip_addr_t 													server_ip;
+
+/* Wait until this callback gets the IP */
+static void mqtt_resolved_cb(const char *host, const ip_addr_t *ipaddr,
+                             void *callback_arg)
+{
+  /* If resolved IP is known -> set it */
+  if (ipaddr->addr != 0)
+  {
+    server_ip.addr = ipaddr->addr;
+		printf("server_ip.addr =%s\n", ip4addr_ntoa(&server_ip));
+  }
+}
+
+
 /* USER CODE END Header_MsgStartTask */
 void MsgStartTask(void *argument)
 {
   /* USER CODE BEGIN MsgStartTask */
   /* Infinite loop */
+	printf("Started\n");
+	
+	const char tst_name[] = "google.com";
+	
+
+	err_t err = dns_gethostbyname(tst_name, &server_ip, mqtt_resolved_cb, NULL);
+	
   for(;;)
   {
     osDelay(1);
