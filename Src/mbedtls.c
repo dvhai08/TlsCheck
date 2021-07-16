@@ -47,6 +47,7 @@ void MX_MBEDTLS_Init(void)
 {
    /**
   */
+    mbedtls_threading_set_alt(cmsis_os_mutex_init, cmsis_os_mutex_free, cmsis_os_mutex_lock, cmsis_os_mutex_unlock);
   mbedtls_ssl_init(&ssl);
   mbedtls_ssl_config_init(&conf);
   mbedtls_x509_crt_init(&cert);
